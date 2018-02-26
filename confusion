@@ -1,0 +1,67 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Feb 26 15:27:36 2018
+
+@author: onion
+"""
+import os
+
+
+import numpy as np
+
+import matplotlib.pyplot as plt
+import pickle, keras
+
+import sys
+sys.path.append('../confusion')
+#import plotcm
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import cohen_kappa_score, accuracy_score
+ 
+
+# use this to get confusion_matrix onion
+def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues, labels=[]):
+    plt.figure(figsize=(12,8)) # 如果数据类别数目增多，画出来的混淆矩阵密密麻麻看不清，根据需要调整figsize即可变清晰。8比12小，按的是比例，这样画出来的混淆矩阵右边的彩色条大小合适。当然，可以自己调整。
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(labels))
+    plt.xticks(tick_marks, labels, rotation=80)
+    plt.yticks(tick_marks, labels)
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.savefig(title)
+# %%调用库产生kapaa系数，和总体准确率OA 
+pre_labels = []
+for x in test_Y_hat:
+    tmp = np.argmax(x, 0)
+    pre_labels.append(tmp)
+true_labels = []
+for x in Y_test:
+    tmp = np.argmax(x, 0)
+    true_labels.append(tmp)
+kappa = cohen_kappa_score(pre_labels, true_labels)
+oa = accuracy_score(true_labels, pre_labels)
+kappa_oa = {}
+print('oa_all:', oa)
+print('kappa_all:', kappa)
+# plt.show()
+
+# %%产生混淆矩阵
+conf = np.zeros([len(classes), len(classes)])
+confnorm = np.zeros([len(classes), len(classes)])
+for i in range(0, X_test.shape[0]):
+    j = list(Y_test[i, :]).index(1)
+    k = int(np.argmax(test_Y_hat[i, :]))
+    conf[j, k] += 1
+for i in range(0, len(classes)):
+    confnorm[i, :] = conf[i, :] / np.sum(conf[i, :])
+plot_confusion_matrix(confnorm, labels=classes, title='%s Confusion matrix' % (name))
+#%%基于混淆矩阵中的每一类样本的识别准确率，产生平均准确率AA
+summ=0
+numbers=len(classes)#类别数
+for i in range(numbers):
+    summ += confnorm[i,i]
+AA=summ/numbers
+print('AA:',AA)
